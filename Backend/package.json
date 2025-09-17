@@ -13,7 +13,11 @@
   "dependencies": {
     "@qdrant/qdrant-js": "^1.15.1",
     "axios": "^1.12.2",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "rss-parser": "^3.13.0"
+    "express": "^5.1.0",
+    "redis": "^5.8.2",
+    "rss-parser": "^3.13.0",
+    "socket.io": "^4.8.1"
   }
 }
