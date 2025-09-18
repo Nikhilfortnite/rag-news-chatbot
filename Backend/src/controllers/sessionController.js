@@ -1,0 +1,62 @@
+const { v4: uuidv4 } = require("uuid");
+const redisService = require("../services/redisService");
+
+async function createSession(req, res) {
+  try {
+    const sessionId = uuidv4();
+    const newSession = await redisService.createSession(sessionId);
+    res.status(201).json(newSession);
+  } catch (error) {
+    console.error("Error creating session:", error);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+}
+
+async function getAllSessions(req, res) {
+  try {
+    const sessions = await redisService.getAllSessions();
+    res.json(sessions);
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+}
+
+async function getSessionById(req, res) {
+  try {
+    const { id } = req.params;
+    const session = await redisService.getSession(id);
+
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    res.json(session);
+  } catch (error) {
+    console.error("Error fetching session:", error);
+    res.status(500).json({ error: "Failed to fetch session" });
+  }
+}
+
+async function deleteSession(req, res) {
+  try {
+    const { id } = req.params;
+    const deleted = await redisService.deleteSession(id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+
+    res.json({ message: "Session deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    res.status(500).json({ error: "Failed to delete session" });
+  }
+}
+
+module.exports = {
+  createSession,
+  getAllSessions,
+  getSessionById,
+  deleteSession,
+};

@@ -4,14 +4,15 @@ require('dotenv').config();
 
 class GeminiService {
     constructor() {
-        this.genAI = GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
     }
 
     async generateResponse(query, relevantContext, chatHistory = []) {
         try {
             // Construct the prompt with context and history
             const systemPrompt = SYSTEM_PROMPT(query, relevantContext, chatHistory);
+            console.log("Gemini Prompt : ", systemPrompt);
             const result = await this.model.generateContent(systemPrompt);
             const response = await result.response;
         
@@ -20,7 +21,9 @@ class GeminiService {
                 sources: relevantContext.map(doc => ({
                 title: doc.title || 'News Article',
                 url: doc.url || null,
-                snippet: doc.content.substring(0, 150) + '...'
+                snippet: doc.content
+                ? doc.content.substring(0, 150) + "..."
+                : "(No content available)"
                 }))
             };
         } 
@@ -33,6 +36,7 @@ class GeminiService {
     async generateStreamingResponse(query, relevantContext, chatHistory = []) {
         try {
             const systemPrompt = STREAMING_PROMPT(query, relevantContext, chatHistory);
+            console.log("Gemini Prompt : ", systemPrompt);
             const result = await this.model.generateContentStream(systemPrompt);
             return result.stream;
         } 

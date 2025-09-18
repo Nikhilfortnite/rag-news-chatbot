@@ -1,8 +1,6 @@
-// scripts/ingest.js
 const Parser = require("rss-parser");
 const { initCollection, addDocuments } = require("../services/vectorService.js");
 
-// Load .env
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
