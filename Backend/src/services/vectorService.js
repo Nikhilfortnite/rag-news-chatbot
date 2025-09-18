@@ -60,6 +60,7 @@ async function addDocuments(docs) {
     const points = [];
 
     for (let i = 0; i < docs.length; i++) {
+      console.log("Preparing doc for insertion:", docs[i]);
       const vector = await getEmbedding(docs[i].content);
       points.push({
         id: Date.now() + i,
@@ -88,16 +89,47 @@ async function searchDocuments(queryVector, limit = 5) {
       vector: queryVector,
       limit,
     });
-    return result;
+     
+    return result.map(r => ({
+      id: r.id,
+      score: r.score,
+      title: r.payload?.title || "Untitled",
+      url: r.payload?.link || null,
+      content: r.payload?.content || "",
+    }));
+
   } catch (error) {
     console.error("Error searching documents:", error.message);
     throw error;
   }
 }
 
+async function searchRelevantDocuments(query, limit = 5) {
+    try{
+        const queryVector = await getEmbedding(query);
+        return searchDocuments(queryVector, limit);
+    }
+    catch(error) {
+        console.error("Error in building embedding or searching documents:", error.message);
+        throw error;
+    }
+}
+
+async function getCollectionStats() {
+  try {
+    return await qdrant.getCollection(COLLECTION_NAME);
+  } catch (error) {
+    console.error("Error getting collection info:", error.message);
+    throw error;
+  }
+}
+
+
 module.exports = {
   initCollection,
   getEmbedding,
   addDocuments,
   searchDocuments,
+  searchRelevantDocuments,
+  getCollectionStats,
 };

@@ -114,7 +114,7 @@ class RedisService {
     const historyKey = `history:${sessionId}`;
     try {
       const messages = await this.client.lRange(historyKey, 0, limit - 1);
-      return messages.map((msg) => JSON.parse(msg)).reverse(); // oldest → newest
+      return messages.map((msg) => JSON.parse(msg)); // oldest → newest
     } catch (error) {
       console.error('Error fetching chat history:', error);
       return [];

@@ -5,17 +5,21 @@ const socketIo = require('socket.io');
 require('dotenv').config();
 
 
-const chatRoutes = require('./routes/chat');
-const sessionRoutes = require('./routes/session');
-const redisService = require('./services/redisService');
+const chatRoutes = require('./src/routes/chat');
+const sessionRoutes = require('./src/routes/session');
+const redisService = require('./src/services/redisService');
 
 const app = express();
 const server = http.createServer(app);
 
 // Configure CORS for both Express and Socket.IO
+// const corsOptions = {
+//   origin: process.env.FRONTEND_URL || "http://localhost:3000",
+//   credentials: true
+// };
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
+  origin: "*",
 };
 
 app.use(cors(corsOptions));
