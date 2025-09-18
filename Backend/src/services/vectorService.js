@@ -3,11 +3,6 @@ const axios = require("axios");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 
-console.log("QDRANT_URL:", process.env.QDRANT_URL);
-console.log("QDRANT_API_KEY:", process.env.QDRANT_API_KEY ? "Exists" : "Missing");
-console.log("JINA_API_KEY:", process.env.JINA_API_KEY ? "Exists" : "Missing");
-console.log("EMBEDDING_URL:", process.env.EMBEDDING_URL);
-
 const qdrant = new QdrantClient({
   url: process.env.QDRANT_URL,
   apiKey: process.env.QDRANT_API_KEY,

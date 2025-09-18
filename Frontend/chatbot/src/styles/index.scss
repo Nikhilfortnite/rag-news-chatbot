@@ -1,0 +1,31 @@
+@use "./_variables.scss";
+@use "./_layout.scss";
+@use "./Sidebar.scss";
+@use "./ChatWindow.scss";
+@use "./MessageBubble.scss";
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none;           /* Chrome, Safari */
+}
+
+body::-webkit-scrollbar {
+  display: none;           /* Chrome, Safari */
+}
+
+#root {
+  height: 100vh;
+  overflow-x: hidden;
+  
+  &::-webkit-scrollbar {
+    display: none;         /* Now & works because it's inside #root */
+  }
+}
+

@@ -1,8 +1,8 @@
 const redisService = require('../services/redisService');
 
-async function ensureSession(sessionId) {
+async function ensureSession(token, sessionId) {
   let session = await redisService.getSession(sessionId);
-  if (!session) session = await redisService.createSession(sessionId);
+  if (!session) session = await redisService.createSession(token, sessionId);
   return session;
 }
 
@@ -22,8 +22,8 @@ async function clearHistory(sessionId) {
   return redisService.clearChatHistory(sessionId);
 }
 
-async function getAllSessions() {
-  return redisService.getAllSessions();
+async function getAllSessions(token) {
+  return redisService.getAllSessions(token);
 }
 
 async function getCachedResponse(query) {

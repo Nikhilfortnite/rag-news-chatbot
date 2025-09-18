@@ -12,7 +12,7 @@ class GeminiService {
         try {
             // Construct the prompt with context and history
             const systemPrompt = SYSTEM_PROMPT(query, relevantContext, chatHistory);
-            console.log("Gemini Prompt : ", systemPrompt);
+            console.log("Gemini Question : ", query);
             const result = await this.model.generateContent(systemPrompt);
             const response = await result.response;
         
@@ -36,7 +36,6 @@ class GeminiService {
     async generateStreamingResponse(query, relevantContext, chatHistory = []) {
         try {
             const systemPrompt = STREAMING_PROMPT(query, relevantContext, chatHistory);
-            console.log("Gemini Prompt : ", systemPrompt);
             const result = await this.model.generateContentStream(systemPrompt);
             return result.stream;
         } 
