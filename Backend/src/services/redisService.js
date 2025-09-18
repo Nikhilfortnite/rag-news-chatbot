@@ -52,20 +52,57 @@ class RedisService {
     }
   }
 
-  // Session management methods
-  async createSession(sessionID) {
+  async loginUser(username) {
     await this.ensureClient();
 
-    const sessionKey = `session:${sessionID}`;
+    if (!username || typeof username !== "string") {
+      throw new Error("Invalid username");
+    }
+
+    // Base64 encode the username to simple "token"
+    const token = Buffer.from(username).toString("base64");
+
+    const userKey = `user:${token}`;
+    const userData = { username };
+
+    await this.client.hSet(userKey, userData);
+    await this.client.expire(userKey, 24 * 60 * 60);
+
+    return {token: token};
+  }
+
+  async getUser(token) {
+    await this.ensureClient();
+
+    const userKey = `user:${token}`;
+    const user = await this.client.hGetAll(userKey);
+    return Object.keys(user).length === 0 ? null : user;
+  }
+
+  // Session management methods
+  async createSession(token, sessionId) {
+    await this.ensureClient();
+
+    const userSessionsKey = `user_sessions:${token}`;
+    const sessionKey = `session:${sessionId}`;
+
+    const sessionCount = await this.client.lLen(userSessionsKey);
+    const sessionName = `Session ${sessionCount + 1}`;
+
     const sessionData = {
-      id: sessionID,
+      id: sessionId,
+      name: sessionName,
       createdAt: new Date().toISOString(),
       lastActivity: new Date().toISOString(),
       messageCount: 0,
     };
 
+    await this.client.rPush(userSessionsKey, JSON.stringify(sessionData));
+
+    // Also as standAlone for querying
     await this.client.hSet(sessionKey, sessionData);
     await this.client.expire(sessionKey, 24 * 60 * 60);
+
     return sessionData;
   }
 
@@ -114,7 +151,7 @@ class RedisService {
     const historyKey = `history:${sessionId}`;
     try {
       const messages = await this.client.lRange(historyKey, 0, limit - 1);
-      return messages.map((msg) => JSON.parse(msg)); // oldest → newest
+      return messages.map((msg) => JSON.parse(msg)).reverse(); // oldest → newest
     } catch (error) {
       console.error('Error fetching chat history:', error);
       return [];
@@ -134,11 +171,23 @@ class RedisService {
     return true;
   }
 
-  async deleteSession(sessionId) {
+  async deleteSession(token, sessionId) {
     await this.ensureClient();
 
     const sessionKey = `session:${sessionId}`;
     const historyKey = `history:${sessionId}`;
+    const userSessionsKey = `user_sessions:${token}`;
+
+    // Remove from the user's session list
+    const sessionsRaw = await this.client.lRange(userSessionsKey, 0, -1);
+
+    for (const sessionStr of sessionsRaw) {
+      const session = JSON.parse(sessionStr);
+      if (session.id === sessionId) {
+        await this.client.lRem(userSessionsKey, 0, sessionStr);
+        break;
+      }
+    }
 
     await Promise.all([
       this.client.del(sessionKey),
@@ -148,18 +197,26 @@ class RedisService {
     return true;
   }
 
-  async getAllSessions() {
+  async getAllSessions(token) {
     await this.ensureClient();
 
-    const keys = await this.client.keys('session:*');
-    const sessions = [];
-
-    for (const key of keys) {
-      const sessionData = await this.client.hGetAll(key);
-      sessions.push(sessionData);
+    if (token) {
+      const userSessionsKey = `user_sessions:${token}`;
+      const sessionsRaw = await this.client.lRange(userSessionsKey, 0, -1);
+      return sessionsRaw.map((s) => JSON.parse(s));
     }
 
-    return sessions;
+    // No token, fetch all sessions from all users
+    const keys = await this.client.keys("user_sessions:*");
+    const allSessions = [];
+
+    for (const key of keys) {
+      const sessionsRaw = await this.client.lRange(key, 0, -1);
+      const sessions = sessionsRaw.map((s) => JSON.parse(s));
+      allSessions.push(...sessions);
+    }
+
+    return allSessions;
   }
 
   // Cache methods for RAG responses

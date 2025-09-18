@@ -1,3 +1,5 @@
 # Node modules
 Backend/node_modules
 Backend/.env
+Frontend/chatbot/node_modules
+Frontend/chatbot/dist

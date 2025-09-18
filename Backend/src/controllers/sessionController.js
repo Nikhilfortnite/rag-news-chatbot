@@ -3,8 +3,15 @@ const redisService = require("../services/redisService");
 
 async function createSession(req, res) {
   try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; 
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
     const sessionId = uuidv4();
-    const newSession = await redisService.createSession(sessionId);
+    const newSession = await redisService.createSession(token, sessionId);
     res.status(201).json(newSession);
   } catch (error) {
     console.error("Error creating session:", error);
@@ -14,7 +21,14 @@ async function createSession(req, res) {
 
 async function getAllSessions(req, res) {
   try {
-    const sessions = await redisService.getAllSessions();
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; 
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
+    const sessions = await redisService.getAllSessions(token);
     res.json(sessions);
   } catch (error) {
     console.error("Error fetching sessions:", error);
@@ -40,8 +54,15 @@ async function getSessionById(req, res) {
 
 async function deleteSession(req, res) {
   try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; 
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
     const { id } = req.params;
-    const deleted = await redisService.deleteSession(id);
+    const deleted = await redisService.deleteSession(token, id);
 
     if (!deleted) {
       return res.status(404).json({ error: "Session not found" });

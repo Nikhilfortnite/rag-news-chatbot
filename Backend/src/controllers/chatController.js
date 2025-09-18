@@ -5,6 +5,13 @@ const geminiService = require("../services/geminiService");
 
 async function handleMessage(req, res) {
   try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; 
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
     let { sessionId, message } = req.body;
    
     if (!message || typeof message !== "string") {
@@ -20,9 +27,9 @@ async function handleMessage(req, res) {
     // Create session if not provided
     if (!sessionId) {
       sessionId = uuidv4();
-      await chatCrud.ensureSession(sessionId);
+      await chatCrud.ensureSession(token, sessionId);
     } else {
-      await chatCrud.ensureSession(sessionId);
+      await chatCrud.ensureSession(token, sessionId);
     }
 
     // Save user message
@@ -103,6 +110,13 @@ async function handleMessage(req, res) {
 
 async function handleStream(req, res) {
   try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1]; 
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
     let { sessionId, message } = req.body;
 
     if (!message || typeof message !== "string") {
@@ -114,9 +128,9 @@ async function handleStream(req, res) {
     // Create session if not provided
     if (!sessionId) {
       sessionId = uuidv4();
-      await chatCrud.ensureSession(sessionId);
+      await chatCrud.ensureSession(token, sessionId);
     } else {
-      await chatCrud.ensureSession(sessionId);
+      await chatCrud.ensureSession(token, sessionId);
     }
 
     // SSE headers
