@@ -159,6 +159,8 @@
   .input-bar {
     padding: 8px 12px;
     gap: 8px;
+    position: sticky;
+    bottom: 0;
   }
   
   .chat-textarea {
