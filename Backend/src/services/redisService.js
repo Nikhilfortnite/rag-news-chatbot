@@ -52,6 +52,24 @@ class RedisService {
     }
   }
 
+  async recordDataInjestion() {
+    const dataInjestionKey = process.env.DATA_INJUST_KEY;
+    const data = {
+      LastInjestedAt: new Date().toISOString(),
+    };
+
+    await this.client.hSet(dataInjestionKey, data);
+    await this.client.expire(dataInjestionKey, 24 * 60 * 60);
+  }
+
+  async getDataInjestedAT() {
+    await this.ensureClient();
+
+    const dataInjestionKey = process.env.DATA_INJUST_KEY;
+    const result = await this.client.hGetAll(dataInjestionKey);
+    return Object.keys(result).length === 0 ? null : result;
+  }
+
   async loginUser(username) {
     await this.ensureClient();
 
@@ -69,14 +87,6 @@ class RedisService {
     await this.client.expire(userKey, 24 * 60 * 60);
 
     return {token: token};
-  }
-
-  async getUser(token) {
-    await this.ensureClient();
-
-    const userKey = `user:${token}`;
-    const user = await this.client.hGetAll(userKey);
-    return Object.keys(user).length === 0 ? null : user;
   }
 
   // Session management methods
@@ -98,6 +108,7 @@ class RedisService {
     };
 
     await this.client.rPush(userSessionsKey, JSON.stringify(sessionData));
+    await this.client.expire(userSessionsKey, 24 * 60 * 60);
 
     // Also as standAlone for querying
     await this.client.hSet(sessionKey, sessionData);

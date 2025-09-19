@@ -10,6 +10,14 @@ async function createSession(req, res) {
       return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
+    const sessions = await redisService.getAllSessions(token);
+
+    if (sessions.length >= 10) {
+      return res.status(403).json({ 
+        error: "Session limit reached. You can create up to 10 sessions per user." 
+      });
+    }
+
     const sessionId = uuidv4();
     const newSession = await redisService.createSession(token, sessionId);
     res.status(201).json(newSession);

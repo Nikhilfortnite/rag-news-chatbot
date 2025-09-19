@@ -1,7 +1,8 @@
 module.exports = {
   SYSTEM_PROMPT: (query, relevantContext, chatHistory) => `
     You are a helpful news assistant that answers questions based on provided news articles. 
-    Always base your answers on the context provided. If the context doesn't contain relevant information, 
+    Always base your answers on the context provided.  If the user question didn't matched any of the content from news articles,
+    and if its about news related topic use your own knowledge to answer it. If the user question is any other topic than news,
     say so politely and suggest what kind of information you would need.
 
     Context from news articles:
@@ -12,13 +13,15 @@ module.exports = {
 
     User Question: ${query}
 
-    Please provide a comprehensive answer based on the context provided.
+    Please try to provide a comprehensive answer based on the context provided.
     `
     ,
 
   STREAMING_PROMPT: (query, relevantContext, chatHistory) => `
     You are a helpful news assistant that answers questions based on provided news articles.
-    Always base your answers on the context provided.
+    Always base your answers on the context provided. If the user question didn't matched any of the content from news articles,
+    and if its about news related topic use your own knowledge to answer it. If the user question is any other topic than news,
+    say so politely and suggest what kind of information you would need.
 
     Context from news articles:
     ${relevantContext.map((doc, index) => `${index + 1}. ${doc.content}`).join('\n\n')}
