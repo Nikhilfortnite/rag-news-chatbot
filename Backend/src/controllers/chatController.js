@@ -143,6 +143,35 @@ async function handleStream(req, res) {
       timestamp: new Date().toISOString(),
     });
 
+    const cachedResponse = await chatCrud.getCachedResponse(message);
+    
+    console.log("cacheResponse: ", cachedResponse);
+
+    if (cachedResponse) {
+      res.write(`data: ${JSON.stringify({
+        type: "chunk",
+        content: cachedResponse?.text,
+        sources: cachedResponse?.sources,
+        cached: true,
+        done: true
+      })}\n\n`);
+
+      res.write(`data: ${JSON.stringify({
+        type: "done",
+        sources: cachedResponse?.sources || []
+      })}\n\n`);
+
+      await chatCrud.addMessage(sessionId, {
+        type: "bot",
+        content: cachedResponse?.text,
+        sources: cachedResponse?.sources,
+        timestamp: new Date().toISOString(),
+        cached: true,
+      });
+
+      return res.end();
+    }
+
     // Tell client we're processing
     res.write(`data: ${JSON.stringify({ type: "status", content: "thinking..." })}\n\n`);
 
@@ -207,6 +236,8 @@ async function handleStream(req, res) {
       })),
       timestamp: new Date().toISOString(),
     });
+
+    await chatCrud.cacheResponse(message, { text: fullResponse });
 
     res.end();
   } catch (error) {

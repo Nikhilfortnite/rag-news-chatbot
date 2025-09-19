@@ -233,7 +233,7 @@ class RedisService {
   // Cache methods for RAG responses
   async cacheRAGResponse(query, response, ttl = 3600) {
     await this.ensureClient();
-
+    console.log("caching gemini response")
     const cacheKey = `rag:${Buffer.from(query).toString('base64')}`;
     await this.client.setEx(cacheKey, ttl, JSON.stringify(response));
   }

@@ -14,6 +14,7 @@ import "./styles/index.scss";
 function App() {
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Auth state
   const [token, setToken] = useState(localStorage.getItem("usernameToken"));
@@ -24,7 +25,6 @@ function App() {
 
   const loadSessions = async () => {
     if (!token) return; 
-
     try {
       const { data } = await getAllSessions();
       if (data && data.length > 0) {
@@ -41,7 +41,7 @@ function App() {
 
   useEffect(() => {
     loadSessions();
-  }, [token]); // ✅ reload when token changes
+  }, [token]);
 
   const handleCreateSession = async () => {
     if (!token) return;
@@ -82,19 +82,27 @@ function App() {
     }
   };
 
-  // If no token → show login screen
   if (!token) {
     return <Login onLogin={setToken} />;
   }
 
   return (
     <div className="app-layout">
+      <button
+        className="menu-btn"
+        onClick={() => setIsSidebarOpen((prev) => !prev)}
+      >
+        ☰
+      </button>
+
       <Sidebar
         sessions={sessions}
         activeSession={activeSession}
         onSelectSession={setActiveSession}
         onCreateSession={handleCreateSession}
         onDeleteSession={handleDeleteClick}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       <ChatWindow sessionId={activeSession} />

@@ -1,8 +1,12 @@
 import "../styles/Sidebar.scss";
 
-function Sidebar({ sessions, activeSession, onSelectSession, onCreateSession, onDeleteSession }) {
+function Sidebar({ sessions, activeSession, onSelectSession, onCreateSession, onDeleteSession, isOpen, onClose }) {
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isOpen ? "sidebar--open" : ""}`}>
+      <button className="sidebar__close" onClick={onClose}>
+        ✖
+      </button>
+
       <h2 className="sidebar__title">Sessions</h2>
       <button className="sidebar__new-session" onClick={onCreateSession}>
         <span className="sidebar__new-session-icon">+</span>
@@ -13,14 +17,17 @@ function Sidebar({ sessions, activeSession, onSelectSession, onCreateSession, on
           <li
             key={s.id}
             className={`sidebar__item ${activeSession === s.id ? "sidebar__item--active" : ""}`}
-            onClick={() => onSelectSession(s.id)}
+            onClick={() => {
+              onSelectSession(s.id);
+              onClose(); 
+            }}
           >
             <span>{s.name || `Session ${s.id}`}</span>
             <button
               className="sidebar__delete"
               onClick={(e) => {
-                e.stopPropagation(); // prevent session select
-                onDeleteSession?.(s.id); // delegate to App.jsx
+                e.stopPropagation();
+                onDeleteSession?.(s.id);
               }}
             >
               ❌
