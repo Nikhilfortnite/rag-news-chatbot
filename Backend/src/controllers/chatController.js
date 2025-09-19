@@ -144,9 +144,7 @@ async function handleStream(req, res) {
     });
 
     const cachedResponse = await chatCrud.getCachedResponse(message);
-    
-    console.log("cacheResponse: ", cachedResponse);
-
+  
     if (cachedResponse) {
       res.write(`data: ${JSON.stringify({
         type: "chunk",
