@@ -36,6 +36,7 @@ class GeminiService {
     async generateStreamingResponse(query, relevantContext, chatHistory = []) {
         try {
             const systemPrompt = STREAMING_PROMPT(query, relevantContext, chatHistory);
+            console.log("Gemini Prompt : ", query);
             const result = await this.model.generateContentStream(systemPrompt);
             return result.stream;
         } 

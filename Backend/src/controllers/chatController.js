@@ -111,27 +111,16 @@ async function handleMessage(req, res) {
 async function handleStream(req, res) {
   try {
     const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1]; 
-
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
     let { sessionId, message } = req.body;
-
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
     message = message.trim();
-
-    // Create session if not provided
-    if (!sessionId) {
-      sessionId = uuidv4();
-      await chatCrud.ensureSession(token, sessionId);
-    } else {
-      await chatCrud.ensureSession(token, sessionId);
-    }
 
     // SSE headers
     res.writeHead(200, {
@@ -141,6 +130,12 @@ async function handleStream(req, res) {
       "Access-Control-Allow-Origin": "*",
     });
 
+    // Create session
+    if (!sessionId) {
+      sessionId = uuidv4();
+    }
+    await chatCrud.ensureSession(token, sessionId);
+
     // Save user message
     await chatCrud.addMessage(sessionId, {
       type: "user",
@@ -148,21 +143,18 @@ async function handleStream(req, res) {
       timestamp: new Date().toISOString(),
     });
 
-    // Vector search
-    const relevantDocs = await vectorService.searchRelevantDocuments(message, 5);
-    const chatHistory = await chatCrud.getHistory(sessionId, 10);
+    // Tell client we're processing
+    res.write(`data: ${JSON.stringify({ type: "status", content: "thinking..." })}\n\n`);
+
+    // Run vector search + history in parallel
+    const [relevantDocs, chatHistory] = await Promise.all([
+      vectorService.searchRelevantDocuments(message, 5),
+      chatCrud.getHistory(sessionId, 10),
+    ]);
 
     if (!relevantDocs || relevantDocs.length === 0) {
-      const noContextResponse =
-        "I don't have relevant information about that topic in my current news database.";
-
-      res.write(
-        `data: ${JSON.stringify({
-          type: "message",
-          content: noContextResponse,
-          done: true,
-        })}\n\n`
-      );
+      const noContextResponse = "I don't have relevant information about that topic in my database.";
+      res.write(`data: ${JSON.stringify({ type: "message", content: noContextResponse, done: true })}\n\n`);
 
       await chatCrud.addMessage(sessionId, {
         type: "bot",
@@ -174,39 +166,41 @@ async function handleStream(req, res) {
       return res.end();
     }
 
-    // Streaming response from Gemini
-    const stream = await geminiService.generateStreamingResponse(
-      message,
-      relevantDocs,
-      chatHistory
-    );
+    // Start streaming Gemini response
+    const stream = await geminiService.generateStreamingResponse(message, relevantDocs, chatHistory);
 
     let fullResponse = "";
 
     for await (const chunk of stream) {
-      const chunkText = chunk.text();
-      fullResponse += chunkText;
+      try {
+        const chunkText = chunk?.text ? chunk.text() : "";
 
-      res.write(
-        `data: ${JSON.stringify({ type: "chunk", content: chunkText })}\n\n`
-      );
+        if (chunkText) {
+          fullResponse += chunkText;
+          res.write(`data: ${JSON.stringify({ type: "chunk", content: chunkText })}\n\n`);
+        }
+      } catch (innerErr) {
+        console.error("Failed to parse stream chunk:", chunk, innerErr);
+        res.write(`data: ${JSON.stringify({ type: "error", content: "Streaming parse error" })}\n\n`);
+        break;
+      }
     }
 
-    res.write(
-      `data: ${JSON.stringify({
-        type: "done",
-        sources: relevantDocs.map((doc) => ({
-          title: doc.title,
-          url: doc.url,
-          snippet: doc.content.substring(0, 150) + "...",
-        })),
-      })}\n\n`
-    );
+    // Send final event with sources
+    res.write(`data: ${JSON.stringify({
+      type: "done",
+      sources: relevantDocs.map(doc => ({
+        title: doc.title,
+        url: doc.url,
+        snippet: doc.content.substring(0, 150) + "...",
+      }))
+    })}\n\n`);
 
+    // Save bot response
     await chatCrud.addMessage(sessionId, {
       type: "bot",
       content: fullResponse,
-      sources: relevantDocs.map((doc) => ({
+      sources: relevantDocs.map(doc => ({
         title: doc.title,
         url: doc.url,
         snippet: doc.content.substring(0, 150) + "...",
@@ -217,12 +211,7 @@ async function handleStream(req, res) {
     res.end();
   } catch (error) {
     console.error("ChatController handleStream error:", error);
-    res.write(
-      `data: ${JSON.stringify({
-        type: "error",
-        message: "Failed to generate response",
-      })}\n\n`
-    );
+    res.write(`data: ${JSON.stringify({ type: "error", message: "Failed to generate response" })}\n\n`);
     res.end();
   }
 }

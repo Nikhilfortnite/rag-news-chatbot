@@ -12,7 +12,7 @@ async function fetchArticles() {
     const feed = await rssParser.parseURL(process.env.NEWS_URL);
     return feed.items
       .filter(item => item.contentSnippet && item.contentSnippet.trim().length > 0)
-      .slice(0, 10) // You can make this configurable from .env
+      .slice(0, 25)
       .map(item => ({
         title: item.title,
         link: item.link,
@@ -24,14 +24,21 @@ async function fetchArticles() {
   }
 }
 
-(async () => {
+async function runIngestionPipeline() {
   try {
     await initCollection();
     const articles = await fetchArticles();
     await addDocuments(articles);
     console.log("Ingestion pipeline completed successfully");
+    return articles.length;
   } catch (error) {
     console.error("Pipeline failed:", error.message);
-    process.exit(1);
+    throw error;
   }
-})();
+}
+
+module.exports = { runIngestionPipeline };
+
+
+
+
