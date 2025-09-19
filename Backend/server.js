@@ -15,9 +15,7 @@ app.set('trust proxy', 1);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL,'https://rag-news-chatbot-frontend.onrender.com']
-    : ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"],
+  origin: [process.env.FRONTEND_URL,],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

@@ -134,9 +134,13 @@ function ChatWindow({ sessionId }) {
     setMessages((prev) => [...prev, thinking]);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/chat/stream`, {
+      const token = localStorage.getItem("usernameToken");
+
+      if( !token) return;
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/chat/stream`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, message: messageToSend }),
       });
 
@@ -202,7 +206,7 @@ function ChatWindow({ sessionId }) {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendWithStream();
     }
   };
 
@@ -215,25 +219,6 @@ function ChatWindow({ sessionId }) {
           </button>
         </div>
       )}
-
-      {/* <div className="messages-container">
-        {sessionId ? (
-          messages.map((msg, idx) => (
-            <MessageBubble key={idx} type={msg.type} content={msg.text} />
-          ))
-        ) : (
-          <div className="no-session">
-            <ReactTyped
-              strings={["Select or create a session to start chatting"]}
-              typeSpeed={50}
-              backSpeed={30}
-              loop={false}
-              showCursor={false}
-            />
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div> */}
 
       <div className="messages-container">
         {sessionId ? (
@@ -280,7 +265,7 @@ function ChatWindow({ sessionId }) {
           className="chat-textarea"
         />
         <button
-          onClick={handleSend}
+          onClick={handleSendWithStream}
           disabled={!input.trim() || !sessionId}
         >
           Send
