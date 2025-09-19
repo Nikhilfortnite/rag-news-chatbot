@@ -16,8 +16,6 @@ function ChatWindow({ sessionId }) {
 
     getChatHistory(sessionId)
       .then((res) => {
-        console.log("Chat history res: ", res?.data?.history);
-
         const formattedMessages = (res?.data?.history || []).map((msg) => ({
           type: msg.type || msg.role || "bot",
           text: msg.content || msg.text || msg.message || "",
@@ -177,15 +175,15 @@ function ChatWindow({ sessionId }) {
             }
           }
         }
+      }
 
-        if (!botMessage.text.trim()) {
-          botMessage.text = "🤖 Sorry, I couldn't generate a response. Please try again.";
-          setMessages((prev) => {
-            const updated = [...prev];
-            updated[updated.length - 1] = { ...botMessage };
-            return updated;
-          });
-        }
+      if (!botMessage.text.trim()) {
+        botMessage.text = "🤖 Sorry, I couldn't generate a response. Please try again.";
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { ...botMessage };
+          return updated;
+        });
       }
    } catch (err) {
       console.error("Stream error:", err);
